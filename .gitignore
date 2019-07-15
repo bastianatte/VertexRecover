@@ -1,2 +1,10 @@
+# remove git ignore
+'gitignore
+
 # ignore all output dirs
 out*/
+
+# ignore hidden folder
+.idea
+.venv
+
