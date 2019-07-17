@@ -1,5 +1,5 @@
 from utils.misc import get_logger
-from sklearn.metrics import silhouette_score
+from sklearn.metrics import silhouette_score, silhouette_samples
 from utils.plot_utils import plot_trks_mrg, plot_ssd, plot_mrg_evt, plot_truth_mrg
 from sklearn.cluster import KMeans
 import logging
@@ -16,6 +16,7 @@ class ClusterAnalyzer(object):
 
     def plot_kmeans_elbow(self, df, plot_out_dir):
         sum_of_squared_distances = []
+        silh_avg = []
         silh_avg_list = []
         kvalue_list =[]
         cluster_numbers = range(2, self.num_clusters)
@@ -24,11 +25,14 @@ class ClusterAnalyzer(object):
             km = km.fit(df)
             sum_of_squared_distances.append(km.inertia_)
             cls_lab = km.fit_predict(df)
-            ca_logger.info("clus: {}, lab.fit_predict ={}".format(k, cls_lab))
+            # ca_logger.info("clus: {}, lab.fit_predict ={}".format(k, cls_lab))
             silh_avg = silhouette_score(df, cls_lab)
+            silh_avg_samp = silhouette_samples(df, cls_lab)
+            ca_logger.info("clus: {}, silhouette score ={}".format(k, silh_avg))
+            ca_logger.info("clus: {}, silhouette sample ={}".format(k, silh_avg_samp))
             silh_avg_list.append(silh_avg)
             kvalue_list.append(k)
-        plot_ssd(cluster_numbers, sum_of_squared_distances, silh_avg_list)
+        plot_ssd(cluster_numbers, sum_of_squared_distances, silh_avg, plot_out_dir)
 
     def execute(self, df, df_columns, lab_columns):
         z = 0

@@ -2,11 +2,12 @@ import matplotlib.pyplot as plt
 import os
 
 
-def plot_ssd(K, sum_of_squared_distances, id_data):
+def plot_ssd(K, sum_of_squared_distances, labels, id_data):
     plt.plot(K, sum_of_squared_distances, 'bx-')
     plt.xlabel('k')
     plt.ylabel('Sum_of_squared_distances')
     plt.title('Elbow Method For Optimal k')
+    #plt.legend(labels)
     name = os.path.join(id_data, "ssd.png")
     plt.savefig(name, dpi=200)
     plt.close()
