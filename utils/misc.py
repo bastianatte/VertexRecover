@@ -35,7 +35,7 @@ utils_log.setLevel(logging.INFO)
 
 def load_data(rootfile_path, df_columns):
     f = uproot.open(rootfile_path)
-    tree = f['RefitAnalysis;1']
+    tree = f['Clustering;1']
     dataset = tree.pandas.df(df_columns)
     utils_log.info("before : {}".format(dataset.shape))
     features = dataset.loc[:, dataset.columns].values
@@ -46,9 +46,9 @@ def load_data(rootfile_path, df_columns):
 
 
 def print_df_info(df):
-    n_merge_max = df["v_nMergeEvent"].max()
-    n_merge_mean = df["v_nMergeEvent"].mean()
-    n_evt_max = df["v_nEvent"].max()
+    n_merge_max = df["merge_vtx"].max()
+    n_merge_mean = df["merge_vtx"].mean()
+    n_evt_max = df["event_numb"].max()
     utils_log.info("############### USEFUL DATASET INFOS #####################")
     utils_log.info("dataset columns: {}".format(list(df.columns)))
     utils_log.info("dataset shape: {}".format(df.shape))
