@@ -7,4 +7,5 @@ out*/
 # ignore hidden folder
 .idea
 .venv
+utils/__pycache__/*.pyc
 
