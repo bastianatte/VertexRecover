@@ -1,10 +1,10 @@
 {
   "execute": {
-    "df_columns": [ "event_numb", "merge_vtx", "check_type", "clus_pt", "clus_eta"],
-    "lab": ["event_numb", "merge_vtx"],
-    "feat": ["clus_pt", "clus_eta"]
+    "df_columns": [ "event_numb", "merge_vtx", "linked_type", "clus_pt", "clus_eta", "clus_phi", "clus_d0", "clus_z0"],
+    "lab": ["event_numb", "merge_vtx", "linked_type"],
+    "feat": ["clus_pt", "clus_eta", "clus_phi", "clus_d0", "clus_z0"]
   },
   "kmeans": {
-    "n_clusters": 7
+    "n_clusters": 6
   }
 }

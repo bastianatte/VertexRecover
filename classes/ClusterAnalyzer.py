@@ -1,7 +1,7 @@
-from utils.misc import get_logger
+from utils.misc import get_logger, tracks_csv_creator, plot_direc_creator, df_creator
 from sklearn.metrics import silhouette_score, silhouette_samples
 from sklearn.cluster import KMeans, AgglomerativeClustering
-from utils.plot_utils import plot_trks_mrg, plot_ssd,plot_mrg_evt, plot_truth_mrg
+from utils.plot_utils import plot_trks_mrg, plot_ssd, plot_mrg_evt, plot_truth_mrg
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
@@ -17,7 +17,7 @@ class ClusterAnalyzer(object):
         self.num_clusters = num_clusters
         self.output_path = output_path
 
-    def df_exe(self, df, df_columns, lab_columns):
+    def df_exe(self, df, df_columns, feat_column, lab_columns):
         """
         Looping over the whole dataset, this method is able to
         identify the temporary dataframe for each merged vertex.
@@ -101,59 +101,44 @@ class ClusterAnalyzer(object):
         ca_logger.info("{} Merged vertices with more tracks"
                        "than nearby clusters=[{}]".format(t, self.num_clusters))
 
-    def df_clus_exe(self, df, df_columns, lab_columns):
-        """
-        Looping over the whole dataset, this method is able to
-        identify the temporary dataframe for each merged vertex.
-        This is done using event, merged_vertex and truth
-        vertices informations.
-
-        :param df: dataframe
-        :param df_columns: dataframe columns name
-        :param lab_columns: dataframe labels name
-        :return: None
-        """
+    def df_linked_tracks_exe(self, df, df_columns, lab_columns):
         n_empty_mrg = 0
-        hs = 0
-        pu = 0
         n_mrg = 0
         n_event = 0
-        n_tot_merg_evt = []
         n_evt_max = int(df["event_numb"].max())
-        for event in range(1, 2):
+        for event in range(1, n_evt_max+1):
             n_event += 1
             df_temp = df.loc[(df["event_numb"] == event), df_columns]
-            print(df_temp)
-            # n_merge_max = df_temp["merge_vtx"].max()
-            # ca_logger.info("temp merge max: {} ".format(n_merge_max))
-            # if n_merge_max != n_merge_max:
-            #     n_empty_mrg = n_empty_mrg + 1
-            #     continue
-            # n_tot_merg_evt.append(n_merge_max)
-            # for mrg in range(1, int(n_merge_max)):
-            #     n_mrg += 1
-            #     start = time.time()
-            #     df_temp1 = df_temp.loc[(df_temp["event_numb"] == event) &
-            #                            (df_temp["merge_vtx"] == mrg),
-            #                            df_columns]
-            #     ca_logger.info(
-            #         "Event {}, Merge {}".format(event, mrg)
-            #     )
-            #
-            #     # print(df_temp1)
-            #     # print(df_temp1.shape)
-            #     # print(df_temp1["check_type"])
-            #     df_temp1.drop(lab_columns, axis=1, inplace=True)
-            #
-            #     # if df_temp1["check_type"].any() == 0:
-            #     #     hs += 1
-            #     # elif df_temp1["check_type"].any() == 1:
-            #     #     pu += 1
-            #
-            #     stop = time.time()
-            #     # ca_logger.info("Merged vertex cluster"
-            #     #                "done in: {} sec".format(stop - start))
-        ca_logger.info("HS vtx: {}, PU vtx: {}:".format(hs, pu))
+            n_merge_max = df_temp["merge_vtx"].max()
+            if n_merge_max != n_merge_max:
+                n_empty_mrg = n_empty_mrg + 1
+                continue
+            ca_logger.info("{} linked merged vertices!! ".format(n_merge_max))
+            for mrg in range(1, (int(n_merge_max)+1)):
+                ca_logger.info("event[{}] - Mrg Vtx[{}]".format(event, mrg))
+                n_mrg += 1
+                start = time.time()
+                df_temp1 = df_temp.loc[(df_temp["event_numb"] == event) &
+                                       (df_temp["merge_vtx"] == mrg),
+                                       df_columns]
+                n_trks = df_temp1["linked_type"].count()
+                df_full, hs_df, pu_df = df_creator(df_temp1, lab_columns)
+                if n_trks > 10:
+                    ca_logger.info(
+                        "Event {}, Merge {}, nTrks {} - "
+                        "linked HS tracks shape: {}, "
+                        "linked PU tracks shape: {}  ".format(event, mrg, n_trks,
+                                                              hs_df.shape,
+                                                              pu_df.shape)
+                    )
+                    plot_out_dir = plot_direc_creator(self.output_path, event,
+                                                      mrg, n_trks)
+                    tracks_csv_creator(plot_out_dir, df_full, hs_df,
+                                       pu_df, n_trks)
+                    self.cluster_exe(df_full, plot_out_dir)
+                stop = time.time()
+                ca_logger.info("Merged vertex cluster"
+                               "done in: {} sec".format(stop - start))
         ca_logger.info("events: {}, mrg_vtxs: {} ".format(n_event, n_mrg))
         ca_logger.info("{} empty events!".format(n_empty_mrg))
 
@@ -165,49 +150,61 @@ class ClusterAnalyzer(object):
         :param plot_out_dir: plot directory
         :return: None
         """
-        sum_of_squared_distances = []
+        ssd = []
         km_silh_score = []
         silh_score_list = []
         kvalue_list =[]
         cluster_numbers = range(2, self.num_clusters)
         for cnt, k in enumerate(cluster_numbers):
-            ## KMeans
-            km = KMeans(n_clusters=k, random_state=10)
-            km = km.fit(df)
-            sum_of_squared_distances.append(km.inertia_)
-            km_lab = km.fit_predict(df)
-            km_silh_score = silhouette_score(df, km_lab)
-            km_silh_value = silhouette_samples(df, km_lab)
-            silh_score_list.append(km_silh_score)
-            kvalue_list.append(k)
-            ## agg_clus
-            cls = AgglomerativeClustering(n_clusters=k)
-            cls = cls.fit(df)
-            cls_lab = cls.labels_
-            cls_silh_score = silhouette_score(df, cls_lab)
-            cls_silh_value = silhouette_samples(df, cls_lab)
-            ## plot silhouette
-            self.plt_silh(k, df, km, km_lab, km_silh_score,
-                          km_silh_value, plot_out_dir)
-            # cls_plot_path = os.path.join(plot_out_dir, "cls_silhoue")
-            # self.plt_silh(k, df, cls, cls_lab, cls_silh_score,
-            #               cls_silh_value, cls_plot_path)
-            ca_logger.info("KMEANS - "
-                           "clus: {}, "
-                           "lab prediction: {}".format(k, km_lab))
-            # ca_logger.info("clus: {}, "
-            #                "silhouette score: {}".format(k, km_silh_score))
-            # ca_logger.info("clus: {},"
-            #                "silhouette sample: {}".format(k, km_silh_value))
-            ca_logger.info("AGG_CL - "
-                           "clus: {}, "
-                           "lab prediction: {}".format(k, cls_lab))
-        plot_ssd(cluster_numbers, sum_of_squared_distances,
+            ssd_new, km_silh_score = self.kmean_analyzer(k, df, ssd,
+                                                         plot_out_dir)
+            cls, cls_silh_score = self.agg_clus_analyzer(k, df)
+        plot_ssd(cluster_numbers, ssd_new,
                  km_silh_score, plot_out_dir)
+
+    def kmean_analyzer(self, k, df, ssd, plot_out_dir):
+        """
+        Run kmean analysis to exctact useful features
+        for clustering.
+        :param k: cluster number/s
+        :param df: dataframe
+        :param ssd: sum of squared distances
+        :param plot_out_dir: output_plot_path
+        :return: ssd, silhouette_score
+        """
+        km = KMeans(n_clusters=k, random_state=10)
+        km = km.fit(df)
+        ssd.append(km.inertia_)
+        km_lab = km.fit_predict(df)
+        km_silh_score = silhouette_score(df, km_lab)
+        km_silh_value = silhouette_samples(df, km_lab)
+        self.plt_silh(k, df, km, km_lab, km_silh_score,
+                      km_silh_value, plot_out_dir)
+        ca_logger.info("KMEANS - "
+                       "clus: {}, "
+                       "sil_score: {}".format(k, km_silh_score))
+        return ssd, km_silh_score
+
+    def agg_clus_analyzer(self, k, df):
+        """
+        Run agglomerative clustering method to exctact
+        useful features for clustering.
+        :param k: cluster number/s
+        :param df: dataframe
+        :return: cls, cls silhouette score
+        """
+        cls = AgglomerativeClustering(n_clusters=k)
+        cls = cls.fit(df)
+        cls_lab = cls.labels_
+        cls_silh_score = silhouette_score(df, cls_lab)
+        ca_logger.info("AGGCLS - "
+                       "clus: {}, "
+                       "sil_score: {}".format(k, cls_silh_score))
+        return cls, cls_silh_score
 
     def plt_silh(self, k, df, km, km_lab, silh_score, silh_value, out_path):
         """
-        Plotting the silhouette paramente given by kmeans clustering.
+        Plotting the silhouette parameter given by kmeans clustering.
         :param k: cluster number
         :param df: dataframe
         :param km: kmean object
@@ -221,10 +218,10 @@ class ClusterAnalyzer(object):
         # nCol = df.shape[1]
         y_lower = 10
         fig, (ax1, ax2) = plt.subplots(1, 2)
-        fig.set_size_inches(18, 7)
+        fig.set_size_inches(20, 7)
         ax1.set_xlim([-0.1, 1.2])
-        ax1.set_ylim([0, len(df["px"])+(self.num_clusters+1)*7])
-        for i in range(k-1):
+        ax1.set_ylim([0, len(df["clus_d0"])+(self.num_clusters+1)*10])
+        for i in range(k-1): # k-1
             n_clusters_str = str(i)
             ith_cluster_silhouette_values = silh_value[km_lab == i]
             ith_cluster_silhouette_values.sort()
@@ -244,18 +241,18 @@ class ClusterAnalyzer(object):
         ax1.set_yticks([])  # Clear the yaxis labels / ticks
         ax1.set_xticks([-0.1, 0, 0.2, 0.4, 0.6, 0.8, 1])
         colors = cm.nipy_spectral(km_lab.astype(float) / k)
-        ax2.scatter(df["px"], df["py"], marker='o',
+        ax2.scatter(df["clus_d0"], df["clus_z0"], marker='o',
                     s=30, lw=0, alpha=0.7,
                     c=colors, edgecolor='k')
         centers = km.cluster_centers_
-        ax2.scatter(centers[:, 0], centers[:, 1], marker='o',
+        ax2.scatter(centers[:, 3], centers[:, 4], marker='o',
                     c="white", alpha=1, s=200, edgecolor='k')
         for i, c in enumerate(centers):
             ax2.scatter(c[0], c[1], marker='$%d$' % i, alpha=1,
                         s=50, edgecolor='k')
         ax2.set_title("The visualization of the clustered data.")
-        ax2.set_xlabel("Feature space for px")
-        ax2.set_ylabel("Feature space for py ")
+        ax2.set_xlabel("d0")
+        ax2.set_ylabel("z0")
         plt.suptitle(("Silhouette analysis "
                       "with n_clusters = %d" % k),
                      fontsize=14, fontweight='bold')

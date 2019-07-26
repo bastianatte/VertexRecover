@@ -47,7 +47,9 @@ ROOTFILE_PATH = args.input
 OUPUT_PATH = args.output
 N_CLUSTERS = KMEANS_CONF["n_clusters"]
 DF_COLUMNS = EXEC_CONF["df_columns"]
+FEAT_COLUMNS = EXEC_CONF["feat"]
 LAB_COLUMNS = EXEC_CONF["lab"]
+# VTX_TYPE = EXEC_CONF["linked_type"]
 logger.info("Initializing Analyzer")
 PLOT_DIR = os.path.join(OUPUT_PATH, "Main_Plots")
 if not os.path.exists(PLOT_DIR):
@@ -55,15 +57,18 @@ if not os.path.exists(PLOT_DIR):
 
 feat, dataset = load_data(ROOTFILE_PATH, DF_COLUMNS)
 print_df_info(dataset)
-# MPL = MainDfPlotter(dataset, PLOT_DIR)
-# MPL.plot_pz()
-# MPL.plot_px()
-# MPL.plot_py()
-# MPL.plot_pt()
-# MPL.plot_eta()
-# MPL.plot_phi()
-# MPL.plot_rap()
-# MPL.plot_eta_phi()
 CA = ClusterAnalyzer(N_CLUSTERS, OUPUT_PATH)
 #CA.df_exe(dataset, DF_COLUMNS, LAB_COLUMNS)
-CA.df_clus_exe(dataset, DF_COLUMNS, LAB_COLUMNS)
+CA.df_linked_tracks_exe(dataset, DF_COLUMNS, LAB_COLUMNS)
+
+plot = "no"
+if plot == "yes":
+    MPL = MainDfPlotter(dataset, PLOT_DIR)
+    MPL.plot_pz()
+    MPL.plot_px()
+    MPL.plot_py()
+    MPL.plot_pt()
+    MPL.plot_eta()
+    MPL.plot_phi()
+    MPL.plot_rap()
+    MPL.plot_eta_phi()
