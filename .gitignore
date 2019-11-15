@@ -3,8 +3,9 @@
 
 # ignore all output dirs
 out*/
+output/*/
 
 # ignore hidden folder
-.idea
-.venv
-
+.idea/*
+.venv/*
+data/*/
