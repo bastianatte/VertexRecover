@@ -34,7 +34,7 @@ utils_log = get_logger(__name__)
 utils_log.setLevel(logging.INFO)
 
 
-def load_data(rootfile_path, df_columns):
+def load_data(rootfile_path, df_columns, tree_name):
     """
     Loading dataframe using uproot.tree method.
     Cleaning infinity and nan, and dropping
@@ -46,6 +46,7 @@ def load_data(rootfile_path, df_columns):
     """
     f = uproot.open(rootfile_path)
     tree = f['Clustering;1']
+    tree = f[tree_name]
     dataset = tree.pandas.df(df_columns)
     utils_log.info("before : {}".format(dataset.shape))
     features = dataset.loc[:, dataset.columns].values
@@ -53,6 +54,7 @@ def load_data(rootfile_path, df_columns):
     dataset = dataset.drop_duplicates()
     utils_log.info("after checking nan and inf : {}".format(dataset.shape))
     return features, dataset
+
 
 def print_df_info(df):
     """
@@ -71,6 +73,7 @@ def print_df_info(df):
     utils_log.info("AVERAGE Number of merged vertices per event: {}".format(n_merge_mean))
     utils_log.info("##########################################################")
 
+
 def plot_direc_creator(path_to_directory, evt, mrg, n_trks):
     """
     Create a directory for each event where to store the plots.
@@ -88,6 +91,7 @@ def plot_direc_creator(path_to_directory, evt, mrg, n_trks):
     if not os.path.exists(plot_out_dir):
         os.makedirs(plot_out_dir)
     return plot_out_dir
+
 
 def tracks_csv_creator(folder, df1, df_hs, df_pu, n_trks):
     """
@@ -109,6 +113,7 @@ def tracks_csv_creator(folder, df1, df_hs, df_pu, n_trks):
         df_pu_path = os.path.join(folder, "pu_tracks_" +
                                   str(n_trks) + ".csv")
         df_pu.to_csv(df_pu_path, header=True, index=False)
+
 
 def df_creator(df_temp1, lab_columns):
     """
