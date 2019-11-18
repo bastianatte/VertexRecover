@@ -1,0 +1,11 @@
+# remove git ignore
+'gitignore
+
+# ignore all output dirs
+out*/
+output/*/
+
+# ignore hidden folder
+.idea/*
+.venv/*
+data/*/
