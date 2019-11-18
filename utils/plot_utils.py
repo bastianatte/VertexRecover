@@ -1,3 +1,7 @@
+# from sklearn.metrics import silhouette_score, silhouette_samples
+# from sklearn.cluster import KMeans
+import numpy as np
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import os
 
@@ -44,3 +48,7 @@ def plot_truth_mrg(n_truth, out_path):
         name = os.path.join(out_path, "nTruth_mrg.png")
         plt.savefig(name, dpi=300)
         plt.close()
+
+
+
+
